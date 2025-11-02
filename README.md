@@ -2,7 +2,7 @@
 
 TuAmigoFiel es una aplicación Full Stack para la gestión integral de una veterinaria.
 Permite administrar productos, servicios, ventas (POS), alertas de stock y vencimiento, agenda y reportes.
-El proyecto está dividido en frontend (React) y backend (Node.js + Express + SQLite), con autenticación basada en JWT.
+Frontend: React. Backend: Node.js + Express + SQLite. Autenticación por JWT.
 
 🚀 Visión general
 
@@ -65,21 +65,21 @@ tuamigofiel1/
 ⚙️ Configuración y ejecución
 1. Instalar dependencias
 
-Backend:
+Backend
 
 cd backend
 npm install
 npm install node-cron nodemailer
 
 
-Frontend:
+Frontend
 
 cd frontend
 npm install
 
 2. Variables de entorno
 
-Crear un archivo .env dentro de /backend con el siguiente contenido:
+Crear un archivo .env dentro de /backend con este contenido de ejemplo:
 
 PORT=4000
 JWT_SECRET=tu_jwt_secret
@@ -89,7 +89,7 @@ ADMIN_PASS_HASH=$2a$...      # Hash generado con bcryptjs
 
 ALERT_LOW_STOCK_THRESHOLD=5
 ALERT_EXPIRY_DAYS=30
-ALERT_CRON=0 8 * * *
+ALERT_CRON="0 8 * * *"
 ALERT_TIMEZONE=America/Argentina/Buenos_Aires
 
 ADMIN_EMAIL=tuemail@ejemplo.com
@@ -103,8 +103,9 @@ SMTP_PASS=contraseña_smtp
 
 3. Ejecutar el proyecto
 
-Backend (modo desarrollo):
+Backend (dev):
 
+cd backend
 npm run dev
 
 
@@ -113,46 +114,52 @@ Ejecutar job de alertas manualmente:
 node run_alerts.js
 
 
-Frontend (modo desarrollo):
+Frontend (dev):
 
 cd frontend
 npm run dev
 
 🧱 Esquema de Base de Datos (SQLite)
-Tabla products
+products
 Campo	Tipo	Descripción
 id	INTEGER	PK
 nombre	TEXT	Nombre del producto
 marca	TEXT	Marca
 descripcion	TEXT	Descripción
 precio	REAL	Precio de venta
-cost	REAL	Costo (opcional)
+cost	REAL	Costo (opcional, para ganancias)
 categoria	TEXT	Categoría
-imagen	TEXT	URL o ruta
+imagen	TEXT	URL o ruta de imagen
 stock	INTEGER	Cantidad disponible
 vencimiento	TEXT	Fecha ISO (YYYY-MM-DD)
-Tabla services
+services
 
-Registra servicios ofrecidos (baños, vacunas, etc.)
+Registra servicios ofrecidos (baños, vacunas, consultas, etc.).
 
-Tabla sales y sale_items
+sales y sale_items
 
-Control de ventas y detalle de productos/servicios vendidos.
+Control de ventas y detalle de productos/servicios vendidos (incluye qty y unit_price).
 
-Tabla alerts
+alerts
 
 Registra alertas automáticas generadas por stock bajo o vencimiento próximo.
 
-Tabla users
+users
 
-Maneja usuarios del sistema y roles.
+Maneja usuarios, passwords hasheados y roles (admin, cashier, vet, ...).
 
 🌐 Endpoints principales
 🔑 Autenticación
 
 POST /api/login
-Body: { "user": "admin", "pass": "..." }
-Response: { "token": "JWT..." }
+Body:
+
+{ "user": "admin", "pass": "..." }
+
+
+Response:
+
+{ "token": "JWT..." }
 
 📦 Productos
 Método	Ruta	Descripción
@@ -166,15 +173,24 @@ GET	/api/services	Listar servicios
 POST	/api/services	Crear servicio (auth)
 💰 Ventas
 Método	Ruta	Descripción
-POST	/api/sales	Crear venta y reducir stock
-GET	/api/sales	Listar ventas
+POST	/api/sales	Crear venta y reducir stock (auth)
+GET	/api/sales	Listar ventas (filtros opcionales)
+
+Ejemplo body para /api/sales
+
+{
+  "cart": [
+    { "id": 1, "qty": 2, "precio": 500, "type": "product" }
+  ]
+}
+
 ⚠️ Alertas
 Método	Ruta	Descripción
-GET	/api/alerts	Listar alertas
-POST	/api/alerts/check	Forzar chequeo
-PUT	/api/alerts/:id/resolve	Marcar resuelta
+GET	/api/alerts	Listar alertas (auth)
+POST	/api/alerts/check	Forzar chequeo (auth, opcional)
+PUT	/api/alerts/:id/resolve	Marcar alerta como resuelta
 
-Autenticación: enviar header Authorization: Bearer <token>.
+En endpoints protegidos enviar header: Authorization: Bearer <token>.
 
 🧭 Frontend — Páginas principales
 
@@ -200,36 +216,27 @@ Ejecutar:
 node run_alerts.js
 
 
-Verificar resultados:
+Verificar:
 
 sqlite3 data/database.sqlite "SELECT * FROM alerts ORDER BY created_at DESC LIMIT 5;"
 
 Ventas
 
-Enviar POST /api/sales con:
-
-{
-  "cart": [
-    { "id": 1, "qty": 2, "precio": 500, "type": "product" }
-  ]
-}
-
-
-→ Se genera una venta y se descuenta el stock automáticamente.
+Enviar POST /api/sales con el body del ejemplo arriba → se genera una venta y se descuenta stock automáticamente.
 
 🧩 Buenas prácticas
 
-Mantener .env fuera del control de versiones.
+Mantener .env fuera del control de versiones (.gitignore).
 
-Usar migraciones (Knex, Umzug) si se escala a PostgreSQL.
+Usar migraciones (Knex, Umzug) si migrás a PostgreSQL.
 
-Realizar backups periódicos de la base SQLite.
+Realizar backups periódicos del archivo SQLite.
 
 Implementar roles y middlewares (admin, cashier, vet).
 
 Agregar tests para endpoints críticos (sales, stock changes).
 
-📋 Próximas mejoras
+📋 Próximas mejoras (roadmap)
 
 Módulo de reportes (ganancia mensual, top productos).
 
@@ -239,17 +246,16 @@ Dashboard con gráficos en tiempo real.
 
 Multiusuario y roles diferenciados.
 
-Notificaciones vía correo para alertas críticas.
+Notificaciones por correo para alertas críticas.
 
 👨‍💻 Autor
 
-Desarrollador: Dilan Perea
+Dilan Perea — Full Stack Developer (Node.js, React, SQLite)
+📧 dilanperea.dev@gmail.com
 
-📧 Contacto: dilanperea.dev@gmail.com
-
-💼 Rol: Full Stack Developer — Node.js, React, SQLite
+GitHub: https://github.com/Dilanp10
 
 🪪 Licencia
 
 Este proyecto está bajo la licencia MIT.
-Podés usarlo, modificarlo y distribuirlo libremente, manteniendo el crédito al autor
+Podés usarlo, modificarlo y distribuirlo libremente, manteniendo el crédito al autor.
