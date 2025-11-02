@@ -1,0 +1,245 @@
+Proyecto — TuAmigoFiel (documentación resumida)
+1. Visión general
+
+Aplicación para gestión de una veterinaria: control de stock, vencimientos, ventas (POS), servicios, alertas (stock/venc.), agenda y reportes. Frontend en React, backend en Node.js + Express, DB SQLite (actual), autenticación con JWT.
+
+2. Estructura del repositorio (resumida)
+
+Estructura principal (tu proyecto puede variar un poco):
+
+backend/
+├─ app.js or server.js            # arranque del servidor y mounting de rutas
+├─ package.json
+├─ config/
+│  └─ db.js                       # helpers SQLite: all, get, run
+├─ controllers/
+│  ├─ productosController.js
+│  ├─ servicesController.js
+│  ├─ salesController.js
+│  └─ alertsController.js
+├─ routes/
+│  ├─ productos.js
+│  ├─ services.js
+│  ├─ sales.js
+│  └─ alerts.js
+├─ services/
+│  ├─ productosService.js
+│  ├─ servicesService.js
+│  ├─ salesService.js
+│  └─ alertsService.js
+├─ jobs/
+│  └─ alertsJob.js                # cron para generar alertas
+├─ data/
+│  └─ database.sqlite
+└─ run_alerts.js                   # script de prueba
+
+
+Frontend (src):
+
+src/pages/
+├─ LoginPage.jsx
+├─ AdminPage.jsx
+├─ AlmacenPage.jsx
+├─ VentasPage.jsx
+├─ AlertsPage.jsx
+...
+src/component/
+├─ NavbarAdmin.jsx
+├─ ProductModal.jsx
+...
+src/lib/axios.js                    # instancia axios con baseURL y token
+
+3. Cómo configurar y ejecutar (backend)
+
+Instalar dependencias:
+
+cd backend
+npm install
+npm install node-cron nodemailer   # si no están
+
+
+Variables de entorno (.env):
+
+PORT=4000
+JWT_SECRET=tu_jwt_secret
+ADMIN_USER=admin
+ADMIN_PASS_HASH=$2a$...    # hashed con bcryptjs (si usas auth simple)
+ALERT_LOW_STOCK_THRESHOLD=5
+ALERT_EXPIRY_DAYS=30
+ALERT_CRON=0 8 * * *
+ALERT_TIMEZONE=America/Argentina/Buenos_Aires
+ADMIN_EMAIL=tuemail@ejemplo.com
+SMTP_HOST=...
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASS=...
+
+
+Arrancar en dev:
+
+npm run dev
+
+
+Comprobar job de alertas: revisá logs que indican [alertsJob] Iniciando job.... Para probar manualmente:
+
+node run_alerts.js
+
+4. Esquema de base de datos (principal)
+
+Resumen de las tablas clave (simplificado — adapta según tu DB real):
+
+-- products
+CREATE TABLE products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  marca TEXT,
+  descripcion TEXT,
+  precio REAL,
+  cost REAL,                -- opcional: costo para cálculo de ganancia
+  categoria TEXT,
+  imagen TEXT,
+  stock INTEGER,
+  vencimiento TEXT,         -- fecha ISO 'YYYY-MM-DD'
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME
+);
+
+-- services
+CREATE TABLE services (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL,
+  descripcion TEXT,
+  precio REAL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- sales
+CREATE TABLE sales (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  total REAL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- sale_items
+CREATE TABLE sale_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sale_id INTEGER,
+  product_id INTEGER NULL,
+  service_id INTEGER NULL,
+  qty INTEGER,
+  unit_price REAL,
+  FOREIGN KEY(sale_id) REFERENCES sales(id)
+);
+
+-- alerts
+CREATE TABLE alerts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER,
+  type TEXT,
+  message TEXT,
+  meta TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  resolved_at DATETIME NULL
+);
+
+-- users (auth)
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE,
+  password_hash TEXT,
+  role TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+
+Nota: si aún no tenés cost o sale_items.unit_price, te recomiendo agregarlos para poder calcular ganancia.
+
+5. Endpoints (resumen útil y corto)
+
+Autenticación:
+
+POST /api/login
+Body: { user, pass }
+Response: { token }
+
+Productos:
+
+GET /api/products?categoria=&marca= — lista (público o protegido)
+
+GET /api/products/top?limit= — top por ventas
+
+GET /api/products/search?q=&categoria=&limit=&offset= — búsqueda
+
+POST /api/products — crear (auth)
+Body: { nombre, marca, descripcion, precio, categoria, imagen, stock, vencimiento }
+
+PUT /api/products/:id — actualizar (auth)
+
+Servicios:
+
+GET /api/services?q=&limit=&offset=
+
+POST /api/services — crear (auth)
+
+Ventas:
+
+POST /api/sales — crear venta (auth)
+Body: { cart: [{ id, qty, precio, type }] }
+(Backend crea sales + sale_items y reduce stock para productos)
+
+GET /api/sales — listar ventas (opcional, filtros)
+
+Alertas:
+
+GET /api/alerts — listar alertas (auth)
+
+POST /api/alerts/check — forzar chequeo (auth, opcional)
+
+PUT /api/alerts/:id/resolve — marcar resuelta (auth)
+
+Reports (pendiente — plan abajo):
+
+GET /api/reports/sales-by-month?from=&to= (implementable)
+
+GET /api/reports/profit-by-month?from=&to= (requiere costos)
+
+Auth: pasar header Authorization: Bearer <token>.
+
+6. Frontend — páginas principales
+
+LoginPage.jsx — login admin
+
+AdminPage.jsx — CRUD productos (ahora con stock + vencimiento)
+
+AlmacenPage.jsx — listado de productos con cards, filtro y modal detalle/editar
+
+VentasPage.jsx — POS, carrito, búsqueda live, modal "ver más"
+
+AlertsPage.jsx — ver y resolver alertas
+
+ReportsPage.jsx — pendiente (implementación de reportes)
+
+7. Cómo probar cosas clave
+
+Crear producto con stock y vencimiento y ejecutar:
+
+node run_alerts.js
+
+
+Luego verificar sqlite3 data/database.sqlite "SELECT * FROM alerts ORDER BY created_at DESC LIMIT 5;"
+
+Probar ventas: POST a /api/sales con cart → verificar sale_items y que products.stock se reduzca.
+
+Revisar logs en consola para jobs y errores.
+
+8. Buenas prácticas y notas operativas
+
+Mantener .env fuera del repo (no subirlo).
+
+Migraciones: usa knex/umzug si vas a pasar a Postgres o escalar.
+
+Backups: si usas SQLite, automatizar copia diaria del archivo DB.
+
+Roles: añadir roles (admin, cashier, vet) y middleware authorize(role).
+
+Tests: agregar tests básicos para endpoints críticos (sales, stock changes
