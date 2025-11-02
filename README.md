@@ -1,18 +1,18 @@
 🐾 TuAmigoFiel — Sistema de Gestión para Veterinarias
 
-TuAmigoFiel es una aplicación Full Stack para la gestión integral de una veterinaria.
+TuAmigoFiel es una aplicación Full Stack para la gestión integral de una veterinaria / pet shop.
 Permite administrar productos, servicios, ventas (POS), alertas de stock y vencimiento, agenda y reportes.
 Frontend: React. Backend: Node.js + Express + SQLite. Autenticación por JWT.
 
 🚀 Visión general
 
-TuAmigoFiel centraliza las operaciones diarias de una veterinaria o pet shop:
+TuAmigoFiel centraliza las operaciones diarias de una veterinaria:
 
 🧾 Gestión de productos: stock, precios, vencimientos, categorías.
 
-💰 Ventas (POS): creación de tickets, carrito de compra, reducción automática de stock.
+💰 Ventas (POS): creación de tickets, carrito y reducción automática de stock.
 
-🧼 Servicios: registro y control de precios.
+🧼 Servicios: registro y control de precios (baños, vacunas, consultas, etc.).
 
 ⚠️ Alertas automáticas: por bajo stock o vencimiento próximo.
 
@@ -63,7 +63,7 @@ tuamigofiel1/
 └── txt/                          # Documentos y notas técnicas
 
 ⚙️ Configuración y ejecución
-1. Instalar dependencias
+1) Instalar dependencias
 
 Backend
 
@@ -77,9 +77,9 @@ Frontend
 cd frontend
 npm install
 
-2. Variables de entorno
+2) Variables de entorno
 
-Crear un archivo .env dentro de /backend con este contenido de ejemplo:
+Crear un archivo .env dentro de /backend (no subir al repo). Ejemplo:
 
 PORT=4000
 JWT_SECRET=tu_jwt_secret
@@ -101,9 +101,9 @@ SMTP_PASS=contraseña_smtp
 
 ⚠️ No subas este archivo al repositorio público.
 
-3. Ejecutar el proyecto
+3) Ejecutar el proyecto
 
-Backend (dev):
+Backend (dev)
 
 cd backend
 npm run dev
@@ -114,13 +114,13 @@ Ejecutar job de alertas manualmente:
 node run_alerts.js
 
 
-Frontend (dev):
+Frontend (dev)
 
 cd frontend
 npm run dev
 
 🧱 Esquema de Base de Datos (SQLite)
-products
+Tabla products
 Campo	Tipo	Descripción
 id	INTEGER	PK
 nombre	TEXT	Nombre del producto
@@ -132,23 +132,23 @@ categoria	TEXT	Categoría
 imagen	TEXT	URL o ruta de imagen
 stock	INTEGER	Cantidad disponible
 vencimiento	TEXT	Fecha ISO (YYYY-MM-DD)
-services
 
-Registra servicios ofrecidos (baños, vacunas, consultas, etc.).
+Otras tablas:
 
-sales y sale_items
+services — servicios ofrecidos (baños, vacunas, consultas, etc.).
 
-Control de ventas y detalle de productos/servicios vendidos (incluye qty y unit_price).
+sales y sale_items — control de ventas y detalle (qty, unit_price).
 
-alerts
+alerts — alertas automáticas (stock bajo / vencimiento próximo).
 
-Registra alertas automáticas generadas por stock bajo o vencimiento próximo.
-
-users
-
-Maneja usuarios, passwords hasheados y roles (admin, cashier, vet, ...).
+users — usuarios, passwords hasheados y roles (admin, cashier, vet, ...).
 
 🌐 Endpoints principales
+
+En endpoints protegidos enviar header:
+
+Authorization: Bearer <token>
+
 🔑 Autenticación
 
 POST /api/login
@@ -172,11 +172,11 @@ Método	Ruta	Descripción
 GET	/api/services	Listar servicios
 POST	/api/services	Crear servicio (auth)
 💰 Ventas
-Método	Ruta	Descripción
-POST	/api/sales	Crear venta y reducir stock (auth)
-GET	/api/sales	Listar ventas (filtros opcionales)
 
-Ejemplo body para /api/sales
+POST /api/sales — Crear venta y reducir stock (auth)
+GET /api/sales — Listar ventas (filtros opcionales)
+
+Ejemplo body para /api/sales:
 
 {
   "cart": [
@@ -189,40 +189,24 @@ Método	Ruta	Descripción
 GET	/api/alerts	Listar alertas (auth)
 POST	/api/alerts/check	Forzar chequeo (auth, opcional)
 PUT	/api/alerts/:id/resolve	Marcar alerta como resuelta
-
-En endpoints protegidos enviar header: Authorization: Bearer <token>.
-
-🧭 Frontend — Páginas principales
-
-LoginPage.jsx: Inicio de sesión administrador.
-
-AdminPage.jsx: Dashboard principal.
-
-AlmacenPage.jsx: Listado de productos (cards + modal de edición).
-
-VentasPage.jsx: Punto de venta con búsqueda y carrito.
-
-AlertsPage.jsx: Visualización y resolución de alertas.
-
-ReportsPage.jsx: (pendiente) Gráficos y métricas de ventas.
-
 🧪 Cómo probar funciones clave
+
 Alertas
 
 Crear un producto con bajo stock o vencimiento próximo.
 
-Ejecutar:
+Ejecutar manualmente:
 
 node run_alerts.js
 
 
-Verificar:
+Verificar en SQLite:
 
-sqlite3 data/database.sqlite "SELECT * FROM alerts ORDER BY created_at DESC LIMIT 5;"
+sqlite3 backend/data/database.sqlite "SELECT * FROM alerts ORDER BY created_at DESC LIMIT 5;"
+
 
 Ventas
-
-Enviar POST /api/sales con el body del ejemplo arriba → se genera una venta y se descuenta stock automáticamente.
+Enviar POST /api/sales con el body de ejemplo → se genera la venta y se descuenta stock automáticamente.
 
 🧩 Buenas prácticas
 
@@ -236,7 +220,7 @@ Implementar roles y middlewares (admin, cashier, vet).
 
 Agregar tests para endpoints críticos (sales, stock changes).
 
-📋 Próximas mejoras (roadmap)
+📋 Roadmap (próximas mejoras)
 
 Módulo de reportes (ganancia mensual, top productos).
 
@@ -257,5 +241,4 @@ GitHub: https://github.com/Dilanp10
 
 🪪 Licencia
 
-Este proyecto está bajo la licencia MIT.
-Podés usarlo, modificarlo y distribuirlo libremente, manteniendo el crédito al autor.
+Este proyecto está bajo la licencia MIT. Podés usarlo, modificarlo y distribuirlo libremente, manteniendo el crédito al autor.
